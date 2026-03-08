@@ -304,10 +304,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-xl shadow-[0_0_15px_rgba(147,51,234,0.4)]">
-              A
+              D
             </div>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-              TradeAnalyzer AI
+              DynastyAnalyst
             </span>
             {/* --- NEW PRO BADGE --- */}
             {isPro && (
@@ -318,8 +318,8 @@ export default function Home() {
           </div>
           
           <nav className="flex items-center gap-4 text-sm font-medium">
-            <button className="text-slate-400 hover:text-white transition hidden md:block">Features</button>
-            <button className="text-slate-400 hover:text-white transition hidden md:block">Pricing</button>
+            <a href="#features" className="text-slate-400 hover:text-white transition hidden md:block">Features</a>
+            <a href="#pricing" className="text-slate-400 hover:text-white transition hidden md:block">Pricing</a>
             
             <Show when="signed-out">
               <SignInButton mode="modal">
@@ -612,7 +612,7 @@ export default function Home() {
                         >
                           {msg.role === "model" && (
                             <div className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-2 flex items-center gap-2 text-xs uppercase tracking-wider">
-                              ✨ TradeAnalyzer AI
+                              ✨ DynastyAnalyst
                             </div>
                           )}
                           {msg.text}
@@ -737,11 +737,63 @@ export default function Home() {
         )}
       </main>
 
+      {/* --- ADDED SECTIONS FOR NAVIGATION LINKS TO SCROLL TO --- */}
+
+      {/* --- FEATURES SECTION --- */}
+      <section id="features" className="py-20 border-t border-slate-900 mt-12 bg-slate-950">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-white mb-12 text-center">Engineered for Elite Managers</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
+              <div className="text-blue-400 mb-4 text-2xl">📊</div>
+              <h3 className="text-xl font-bold text-white mb-2">Advanced Metrics</h3>
+              <p className="text-slate-400 text-sm">Beyond PPG. Our AI analyzes YPRR, Target Share, and Expected Points to find hidden value.</p>
+            </div>
+            <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
+              <div className="text-purple-400 mb-4 text-2xl">⏳</div>
+              <h3 className="text-xl font-bold text-white mb-2">3-Year Trajectory</h3>
+              <p className="text-slate-400 text-sm">We don't just look at this week. We project asset value through 2028 based on age cliffs.</p>
+            </div>
+            <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
+              <div className="text-green-400 mb-4 text-2xl">📈</div>
+              <h3 className="text-xl font-bold text-white mb-2">Market Sync</h3>
+              <p className="text-slate-400 text-sm">Real-time alignment with consensus values from KTC, FantasyCalc, and DLF.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- PRICING SECTION --- */}
+      <section id="pricing" className="py-20 bg-slate-900/20">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Upgrade Your Analysis</h2>
+          <p className="text-slate-400 mb-10">Stop guessing. Start winning trades with data-backed intelligence.</p>
+          
+          <div className="bg-slate-900 border border-purple-500/50 p-10 rounded-3xl shadow-[0_0_50px_rgba(147,51,234,0.1)]">
+            <span className="bg-purple-600/20 text-purple-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-purple-500/30">Most Popular</span>
+            <h3 className="text-4xl font-black text-white mt-6 mb-2">Pro Analyst</h3>
+            <div className="text-slate-400 mb-6 text-lg"><span className="text-white text-2xl font-bold">$4.99</span> / month</div>
+            <ul className="text-left space-y-4 mb-10 text-slate-300 max-w-md mx-auto">
+              <li className="flex items-center gap-2">✅ Granular Quantitative Deep Dives</li>
+              <li className="flex items-center gap-2">✅ Age Cliff & Contract Analysis</li>
+              <li className="flex items-center gap-2">✅ Full League Roster Context Awareness</li>
+              <li className="flex items-center gap-2">✅ Draft Capital EV Modeling</li>
+            </ul>
+            <button 
+              onClick={handleUpgrade}
+              className="w-full max-w-md mx-auto block bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white font-bold py-4 rounded-xl transition shadow-lg"
+            >
+              {isPro ? "Currently Pro" : "Get Pro Access"}
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* --- IP & COPYRIGHT FOOTER --- */}
-      <footer className="bg-slate-950 border-t border-slate-900 mt-20">
+      <footer className="bg-slate-950 border-t border-slate-900">
         <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-slate-500 text-sm">
-            &copy; {new Date().getFullYear()} TradeAnalyzer AI. All rights reserved.
+            &copy; {new Date().getFullYear()} DynastyAnalyst. All rights reserved.
           </div>
           <div className="text-slate-600 text-xs text-center md:text-right max-w-md">
             This tool is for entertainment purposes only. We are not affiliated with Sleeper or KeepTradeCut.
