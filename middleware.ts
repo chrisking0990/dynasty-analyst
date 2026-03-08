@@ -1,13 +1,15 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// 1. Define the webhooks as public so Stripe and Clerk can reach them
+// 1. Add the homepage "/" and any landing pages to the public list
 const isPublicRoute = createRouteMatcher([
-  "/api/webhooks/clerk", 
-  "/api/webhooks/stripe",
-  "/api/webhook" // Your existing stripe webhook path
+  "/",                         // The landing page
+  "/api/webhooks/clerk",       // Essential for sync
+  "/api/webhooks/stripe",      // Essential for payments
+  "/api/webhook"               // Your legacy stripe path
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // 2. Only protect the route if it is NOT in the public list
   if (!isPublicRoute(req)) {
     await auth.protect();
   }
