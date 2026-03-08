@@ -4,7 +4,7 @@ import Stripe from "stripe";
 
 // Initialize Stripe using your secret key from Vercel
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2023-10-16", 
+  apiVersion: "2026-02-25.clover", // <-- Updated to fix the TypeScript build error!
 });
 
 export async function POST(req: Request) {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       mode: "subscription",
       line_items: [
         {
-          // This must be your Live Price ID from Stripe!
+          // This uses the Live Price ID you put in Vercel
           price: process.env.STRIPE_PRICE_ID, 
           quantity: 1,
         },
