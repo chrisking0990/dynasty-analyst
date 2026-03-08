@@ -13,9 +13,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// THIS IS WHAT CONTROLS THE BROWSER TAB!
 export const metadata: Metadata = {
-  title: "TradeAnalyzer AI",
-  description: "AI-Powered Dynasty Fantasy Football Trade Machine",
+  title: "DynastyAnalyst",
+  description: "AI-Powered Dynasty Fantasy Football Trade Machine & Advanced Analytics",
 };
 
 export default function RootLayout({

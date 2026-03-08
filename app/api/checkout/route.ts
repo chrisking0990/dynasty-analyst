@@ -1,62 +1,52 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import Stripe from "stripe";
-import { decodeJwt } from "jose"; // Standard tool to read login tokens
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+// Initialize Stripe using your secret key from Vercel
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2023-10-16", 
+});
 
 export async function POST(req: Request) {
   try {
-    console.log("--- SECURE BYPASS START ---");
-
-    // 1. Manually grab the session token from the browser request
-    const cookieHeader = req.headers.get("cookie") || "";
-    const sessionToken = cookieHeader
-      .split("; ")
-      .find((row) => row.startsWith("__session="))
-      ?.split("=")[1];
-
-    if (!sessionToken) {
-      console.error("No session token found in cookies.");
-      return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
-    }
-
-    // 2. Decode the token to get the User ID (This bypasses the Middleware check)
-    const payload = decodeJwt(sessionToken);
-    const userId = payload.sub; // 'sub' is the Clerk User ID
+    // 1. Make sure the user is actually logged into Clerk
+    const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json({ error: "Invalid session." }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized. Please sign in." }, { status: 401 });
     }
 
-    console.log("Verified User ID:", userId);
+    // 2. Figure out the website URL to send them back to after they pay
+    const origin = req.headers.get("origin") || "https://www.dynastyanalyst.com";
 
-    // 3. Create Stripe Session
+    // 3. Create the Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "subscription",
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "TradeAnalyzer AI Pro",
-              description: "Full Dynasty Analytics Unlocked",
-            },
-            unit_amount: 499,
-            recurring: { interval: "month" },
-          },
+          // This must be your Live Price ID from Stripe!
+          price: process.env.STRIPE_PRICE_ID, 
           quantity: 1,
         },
       ],
-      metadata: { userId: userId },
-      success_url: `${req.headers.get("origin")}/?success=true`,
-      cancel_url: `${req.headers.get("origin")}/?canceled=true`,
+      
+      // 👇 THIS TURNS ON THE PROMO CODE BOX 👇
+      allow_promotion_codes: true,
+
+      // This passes the Clerk User ID to Stripe, so your webhook knows who paid
+      client_reference_id: userId,
+      
+      // Where to redirect the user after the transaction
+      success_url: `${origin}/?success=true`,
+      cancel_url: `${origin}/?canceled=true`,
     });
 
+    // 4. Send the Stripe checkout link back to your frontend button
     return NextResponse.json({ url: session.url });
     
   } catch (error: any) {
-    console.error("Final Bypass Error:", error.message);
+    console.error("STRIPE CHECKOUT ERROR:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
