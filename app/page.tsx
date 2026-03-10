@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { SignInButton, Show, UserButton, useUser } from "@clerk/nextjs";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function Home() {
   const { user } = useUser();
@@ -190,13 +192,13 @@ export default function Home() {
     
     const leagueRules = `League Rules: ${isSuperflex ? "Superflex" : "1QB"}, ${ppr} PPR, ${tep} TE Premium. Start ${totalStarters} players. Type: ${isDynasty ? "Dynasty" : "Redraft/Keeper"}`;
     
-    const scoringRules = `CRITICAL INSTRUCTIONS FOR NUMERICAL SCORING:\n1. You MUST assign a concrete "Trade Value Score" (using arbitrary KTC-style value points, e.g., 5500 vs 5200) to both sides to mathematically show how close the trade is.\n2. You MUST calculate a "Team Power Rating" (on a scale of 0 to 100) ONLY for the specific teams involved in the trade.\n3. FORMATTING: You must output these Trade Value Scores and Power Ratings in a clean Markdown Table at the very beginning of your response for easy reading.`;
+    const scoringRules = `CRITICAL INSTRUCTIONS FOR NUMERICAL SCORING:\n1. CRITICAL: DO NOT introduce yourself or repeat these instructions. Start your response IMMEDIATELY with the Markdown table.\n2. You MUST assign a concrete "Trade Value Score" (using arbitrary KTC-style value points, e.g., 5500 vs 5200) to both sides.\n3. You MUST calculate a "Team Power Rating" (on a scale of 0 to 100) ONLY for the specific teams involved in the trade.\n4. FORMATTING: You must output these Trade Value Scores and Power Ratings in a clean Markdown Table at the very beginning of your response for easy reading.`;
 
-    // --- 2. THE HIGH-VALUE TIER CONFIGURATION (PRESERVING ORIGINAL TEXT EXACTLY) ---
+    // --- 2. THE HIGH-VALUE TIER CONFIGURATION ---
     const modeInstructions = {
       fast: `CRITICAL INSTRUCTION: This is a FAST-tier request. Provide a concise, snappy, and fast-paced analysis hitting the main points of the trade without excessive fluff. Focus strictly on the immediate value exchange. Give a definitive winner and a brief explanation.`,
       
-      pro: `CRITICAL INSTRUCTION: This is a PRO-tier request. You are a high-stakes, quantitative dynasty consultant. Provide a highly granular, multi-paragraph breakdown that goes far beyond surface-level analysis. You MUST analyze:\n1. **Advanced Underlying Metrics**: Evaluate the specific players using advanced efficiency metrics (e.g., Target Share, Yards Per Route Run (YPRR), Snap Share, Expected Fantasy Points, or Route Participation). Do not rely solely on gross fantasy points.\n2. **Age Cliffs & Contract Status**: Analyze the age trajectory (e.g., RB age cliffs at 26-27, WR apex at 25-28). Discuss contract situations—are they entering a contract year? Are they a cap casualty candidate? Do they have guaranteed money shielding their role?\n3. **Situational & Scheme Context**: How does the player's offensive ecosystem (coaching scheme, QB play, offensive line efficiency, target competition) specifically impact their 1-to-3 year outlook?\n4. **Real-Time News Intelligence**: Perform a mandatory check for news from the last 72 hours regarding injuries, camp reports, coaching staff quotes, or depth chart changes for all involved players and key teammates.\n5. **Market Discrepancy**: Compare theoretical value against current real-world market sentiment to identify "Buy-Low" or "Sell-High" windows.\n6. **Consolidation Penalty vs. Lineup Depth**: Factor in the Start ${totalStarters} lineup depth. Apply an "Escalating Consolidation Penalty" if giving up an elite "Stud" for multiple fillers in shallow leagues, or reward depth in deep leagues.\n7. **Draft Capital Expected Value (EV) & Pick Projection**: If draft picks are involved, analyze the original owner's roster to project the pick as Early, Mid, or Late. Perform a "Take Now vs. Wait" simulation comparing the veteran's value against the historical hit rate for that specific projected pick/round in a ${isSuperflex ? "Superflex" : "1QB"} format. What is the actual expected value of that specific pick versus an established veteran?\n8. **League Landscape & Roster Construction**: Look closely at the "ENTIRE LEAGUE ROSTER CONTEXT" provided below. How does this trade shift the balance of power? Does it fix a positional scarcity for the buyer? Does it align with their historical win/loss trajectory (rebuilding vs. pushing all-in)?\nBe brutally honest, mathematically rigorous, and leave no stone unturned.`
+      pro: `CRITICAL INSTRUCTION: This is a PRO-tier request. You are a high-stakes, quantitative dynasty consultant. Provide a highly granular, multi-paragraph breakdown analyzing:\n1. **Advanced Underlying Metrics**: Efficiency metrics like YPRR, Target Share, Snap Share, and Expected Fantasy Points.\n2. **Age Trajectory & Contract Status**: Position-specific age cliffs (RB at 26, WR apex 25-28). Analyze contract status, cap casualty risk, and guaranteed money.\n3. **Real-Time News Intelligence**: Perform a mandatory check for news from the last 72 hours regarding injuries, camp reports, coaching staff quotes, or depth chart changes for all involved players and key teammates.\n4. **Environmental & Market Intelligence**: Evaluate the offensive ecosystem (OL play, QB play, coaching scheme). Compare theoretical value against current real-world market sentiment to identify "Buy-Low" or "Sell-High" windows.\n5. **Consolidation Penalty vs. Lineup Depth**: Factor in the Start ${totalStarters} lineup depth. Apply an "Escalating Consolidation Penalty" if giving up an elite "Stud" for multiple fillers in shallow leagues, or reward depth in deep leagues.\n6. **Draft Capital EV & Pick Projection**: If future picks are involved, analyze the original owner's roster to project the pick as Early, Mid, or Late. Then, perform a "Take Now vs. Wait" simulation comparing the veteran's value against the historical hit rate for that specific projected pick in ${isSuperflex ? "Superflex" : "1QB"}.\n7. **League Landscape**: How this shifts the balance of power based on the ENTIRE LEAGUE context below.`
     };
 
     // --- 3. ASSEMBLE THE MASTER PROMPT ---
@@ -558,7 +560,6 @@ export default function Home() {
                     Get highly granular, multi-paragraph breakdowns analyzing 3-year asset trajectories, draft capital hit rates, and deep roster implications.
                   </p>
                   
-                  {/* Wired up button! */}
                   <button 
                     onClick={handleUpgrade}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white font-bold py-3 rounded-lg mb-3 transition shadow-lg"
@@ -618,18 +619,39 @@ export default function Home() {
                     if (idx === 0 && msg.role === "user") return null;
                     return (
                       <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[90%] md:max-w-[80%] p-5 rounded-2xl leading-relaxed whitespace-pre-wrap text-sm shadow-md ${
+                        <div className={`max-w-[90%] md:max-w-[80%] p-5 rounded-2xl leading-relaxed text-sm shadow-md ${
                             msg.role === "user"
                               ? "bg-blue-600 text-white rounded-br-none"
                               : "bg-slate-900 text-slate-300 border border-slate-700/50 rounded-bl-none"
                           }`}
                         >
                           {msg.role === "model" && (
-                            <div className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-2 flex items-center gap-2 text-xs uppercase tracking-wider">
+                            <div className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-4 flex items-center gap-2 text-xs uppercase tracking-wider">
                               ✨ DynastyAnalyst
                             </div>
                           )}
-                          {msg.text}
+                          
+                          {/* --- FIXED TS MARKDOWN RENDERER --- */}
+                          {msg.role === "model" ? (
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                table: ({node, ...props}: any) => <div className="overflow-x-auto my-4"><table className="min-w-full divide-y divide-slate-700 border border-slate-700 rounded-lg" {...props} /></div>,
+                                thead: ({node, ...props}: any) => <thead className="bg-slate-800/50" {...props} />,
+                                th: ({node, ...props}: any) => <th className="px-4 py-3 text-left text-xs font-bold text-slate-300 uppercase tracking-wider" {...props} />,
+                                td: ({node, ...props}: any) => <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-300 border-b border-slate-800/50" {...props} />,
+                                p: ({node, ...props}: any) => <p className="mb-4 last:mb-0" {...props} />,
+                                strong: ({node, ...props}: any) => <strong className="font-bold text-white" {...props} />,
+                                ul: ({node, ...props}: any) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                                ol: ({node, ...props}: any) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                                li: ({node, ...props}: any) => <li className="pl-1" {...props} />
+                              }}
+                            >
+                              {msg.text}
+                            </ReactMarkdown>
+                          ) : (
+                            msg.text
+                          )}
                         </div>
                       </div>
                     );

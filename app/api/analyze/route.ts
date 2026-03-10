@@ -20,7 +20,15 @@ export async function POST(req: Request) {
       throw new Error("Missing GEMINI_API_KEY in .env.local");
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // 👇 Flash model with Google Search Grounding ENABLED (TypeScript error bypassed)
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.5-flash',
+      tools: [
+        {
+          googleSearch: {},
+        } as any, // <--- This 'as any' tells Cursor to stop complaining
+      ],
+    });
 
     const formattedContents = messages.map((msg: any) => ({
       role: msg.role,
