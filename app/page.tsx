@@ -25,6 +25,10 @@ export default function Home() {
 
   const [showPaywall, setShowPaywall] = useState(false);
   
+  // --- DROPDOWN STATE ---
+  const [viewingTeam1, setViewingTeam1] = useState<number | null>(null);
+  const [viewingTeam2, setViewingTeam2] = useState<number | null>(null);
+
   const isPro = user?.publicMetadata?.isPro === true || user?.publicMetadata?.isPro === "true";
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -78,8 +82,15 @@ export default function Home() {
       const res = await fetch(`/api/sleeper?leagueId=${idToLoad}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      
       setLeagueData(data);
       setLeagueId(idToLoad); 
+
+      // --- SET DEFAULT TEAMS FOR DROPDOWNS ---
+      if (data.rosters && data.rosters.length >= 2) {
+        setViewingTeam1(data.rosters[0].roster_id);
+        setViewingTeam2(data.rosters[1].roster_id);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -170,19 +181,22 @@ export default function Home() {
     const ppr = leagueData.leagueInfo.scoring_settings?.rec || 0;
     const tep = leagueData.leagueInfo.scoring_settings?.bonus_rec_te || 0;
     const isDynasty = leagueData.leagueInfo.settings?.type === 2;
+    
+    // Calculate total starting lineup spots
+    const totalStarters = leagueData.leagueInfo.roster_positions?.filter((pos: string) => pos !== "BN").length || 9;
 
     // --- 1. MODULAR PROMPT ARCHITECTURE ---
     const baseIdentity = `Act as an elite, data-driven fantasy football analyst. The current date is ${currentMonthYear}. Evaluate players and draft picks based on their strictly current dynasty status, referencing up-to-date consensus market values (like KeepTradeCut, FantasyCalc) and advanced underlying metrics.`;
     
-    const leagueRules = `League Rules: ${isSuperflex ? "Superflex" : "1QB"}, ${ppr} PPR, ${tep} TE Premium. Type: ${isDynasty ? "Dynasty" : "Redraft/Keeper"}`;
+    const leagueRules = `League Rules: ${isSuperflex ? "Superflex" : "1QB"}, ${ppr} PPR, ${tep} TE Premium. Start ${totalStarters} players. Type: ${isDynasty ? "Dynasty" : "Redraft/Keeper"}`;
     
-    const scoringRules = `CRITICAL INSTRUCTIONS FOR NUMERICAL SCORING:\n1. You MUST assign a concrete "Trade Value Score" (using arbitrary KTC-style value points, e.g., 5500 vs 5200) to both sides to mathematically show how close the trade is.\n2. You MUST calculate a "Team Power Rating" (on a scale of 0 to 100) ONLY for the specific teams involved in the trade.`;
+    const scoringRules = `CRITICAL INSTRUCTIONS FOR NUMERICAL SCORING:\n1. You MUST assign a concrete "Trade Value Score" (using arbitrary KTC-style value points, e.g., 5500 vs 5200) to both sides to mathematically show how close the trade is.\n2. You MUST calculate a "Team Power Rating" (on a scale of 0 to 100) ONLY for the specific teams involved in the trade.\n3. FORMATTING: You must output these Trade Value Scores and Power Ratings in a clean Markdown Table at the very beginning of your response for easy reading.`;
 
-    // --- 2. THE HIGH-VALUE TIER CONFIGURATION ---
+    // --- 2. THE HIGH-VALUE TIER CONFIGURATION (PRESERVING ORIGINAL TEXT EXACTLY) ---
     const modeInstructions = {
       fast: `CRITICAL INSTRUCTION: This is a FAST-tier request. Provide a concise, snappy, and fast-paced analysis hitting the main points of the trade without excessive fluff. Focus strictly on the immediate value exchange. Give a definitive winner and a brief explanation.`,
       
-      pro: `CRITICAL INSTRUCTION: This is a PRO-tier request. You are a high-stakes, quantitative dynasty consultant. Provide a highly granular, multi-paragraph breakdown that goes far beyond surface-level analysis. You MUST analyze:\n1. **Advanced Underlying Metrics**: Evaluate the specific players using advanced efficiency metrics (e.g., Target Share, Yards Per Route Run (YPRR), Snap Share, Expected Fantasy Points, or Route Participation). Do not rely solely on gross fantasy points.\n2. **Age Cliffs & Contract Status**: Analyze the age trajectory (e.g., RB age cliffs at 26-27, WR apex at 25-28). Discuss contract situations—are they entering a contract year? Are they a cap casualty candidate? Do they have guaranteed money shielding their role?\n3. **Situational & Scheme Context**: How does the player's offensive ecosystem (coaching scheme, QB play, offensive line efficiency, target competition) specifically impact their 1-to-3 year outlook?\n4. **Draft Capital Expected Value (EV)**: If draft picks are involved, state the historical hit rate for that specific round/year in a ${isSuperflex ? "Superflex" : "1QB"} format. What is the actual expected value of that specific pick versus an established veteran?\n5. **League Landscape & Roster Construction**: Look closely at the "ENTIRE LEAGUE ROSTER CONTEXT" provided below. How does this trade shift the balance of power? Does it fix a positional scarcity for the buyer? Does it align with their historical win/loss trajectory (rebuilding vs. pushing all-in)?\nBe brutally honest, mathematically rigorous, and leave no stone unturned.`
+      pro: `CRITICAL INSTRUCTION: This is a PRO-tier request. You are a high-stakes, quantitative dynasty consultant. Provide a highly granular, multi-paragraph breakdown that goes far beyond surface-level analysis. You MUST analyze:\n1. **Advanced Underlying Metrics**: Evaluate the specific players using advanced efficiency metrics (e.g., Target Share, Yards Per Route Run (YPRR), Snap Share, Expected Fantasy Points, or Route Participation). Do not rely solely on gross fantasy points.\n2. **Age Cliffs & Contract Status**: Analyze the age trajectory (e.g., RB age cliffs at 26-27, WR apex at 25-28). Discuss contract situations—are they entering a contract year? Are they a cap casualty candidate? Do they have guaranteed money shielding their role?\n3. **Situational & Scheme Context**: How does the player's offensive ecosystem (coaching scheme, QB play, offensive line efficiency, target competition) specifically impact their 1-to-3 year outlook?\n4. **Real-Time News Intelligence**: Perform a mandatory check for news from the last 72 hours regarding injuries, camp reports, coaching staff quotes, or depth chart changes for all involved players and key teammates.\n5. **Market Discrepancy**: Compare theoretical value against current real-world market sentiment to identify "Buy-Low" or "Sell-High" windows.\n6. **Consolidation Penalty vs. Lineup Depth**: Factor in the Start ${totalStarters} lineup depth. Apply an "Escalating Consolidation Penalty" if giving up an elite "Stud" for multiple fillers in shallow leagues, or reward depth in deep leagues.\n7. **Draft Capital Expected Value (EV) & Pick Projection**: If draft picks are involved, analyze the original owner's roster to project the pick as Early, Mid, or Late. Perform a "Take Now vs. Wait" simulation comparing the veteran's value against the historical hit rate for that specific projected pick/round in a ${isSuperflex ? "Superflex" : "1QB"} format. What is the actual expected value of that specific pick versus an established veteran?\n8. **League Landscape & Roster Construction**: Look closely at the "ENTIRE LEAGUE ROSTER CONTEXT" provided below. How does this trade shift the balance of power? Does it fix a positional scarcity for the buyer? Does it align with their historical win/loss trajectory (rebuilding vs. pushing all-in)?\nBe brutally honest, mathematically rigorous, and leave no stone unturned.`
     };
 
     // --- 3. ASSEMBLE THE MASTER PROMPT ---
@@ -654,22 +668,53 @@ export default function Home() {
           </div>
         )}
 
-        {/* --- ROSTERS --- */}
+        {/* --- MOBILE OPTIMIZED ROSTER DROPDOWNS --- */}
         {leagueData && (
-          <div className="space-y-6 animate-fade-in mt-12">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-4">
-              <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded-md">3</span> 
-              {leagueData.leagueInfo.name} Rosters
-            </h2>
+          <div className="space-y-6 animate-fade-in mt-12 mb-20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                <span className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded-md">3</span> 
+                Compare Rosters
+              </h2>
+              
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <select 
+                  value={viewingTeam1 || ""} 
+                  onChange={(e) => setViewingTeam1(Number(e.target.value))}
+                  className="bg-slate-900 border border-slate-700 p-3 rounded-lg text-sm text-blue-400 font-bold focus:outline-none focus:border-blue-500 transition"
+                >
+                  {leagueData.rosters.map((r: any) => (
+                    <option key={r.roster_id} value={r.roster_id}>{getTeamNameByRosterId(r.roster_id)}</option>
+                  ))}
+                </select>
+                <div className="flex items-center justify-center text-slate-600 font-black">VS</div>
+                <select 
+                  value={viewingTeam2 || ""} 
+                  onChange={(e) => setViewingTeam2(Number(e.target.value))}
+                  className="bg-slate-900 border border-slate-700 p-3 rounded-lg text-sm text-purple-400 font-bold focus:outline-none focus:border-purple-500 transition"
+                >
+                  {leagueData.rosters.map((r: any) => (
+                    <option key={r.roster_id} value={r.roster_id}>{getTeamNameByRosterId(r.roster_id)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {leagueData.rosters.map((roster: any) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[viewingTeam1, viewingTeam2].map((rosterId, index) => {
+                if (rosterId === null) return null;
+                const roster = leagueData.rosters.find((r: any) => r.roster_id === rosterId);
+                if (!roster) return null;
+                
                 const teamName = getTeamNameByRosterId(roster.roster_id);
+                const colorClass = index === 0 ? "border-blue-500/30" : "border-purple-500/30";
+                const titleColor = index === 0 ? "text-blue-400" : "text-purple-400";
 
                 return (
-                  <div key={roster.roster_id} className="bg-slate-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-slate-800 shadow-lg hover:border-slate-700 transition duration-300 flex flex-col h-[500px]">
-                    <div className="bg-slate-950/80 p-4 border-b border-slate-800 shrink-0">
-                      <h3 className="font-bold text-sm text-slate-200 truncate">{teamName}</h3>
+                  <div key={`${rosterId}-${index}`} className={`bg-slate-900/40 backdrop-blur-sm rounded-xl overflow-hidden border ${colorClass} shadow-lg flex flex-col h-[600px]`}>
+                    <div className="bg-slate-950/80 p-4 border-b border-slate-800 flex justify-between items-center shrink-0">
+                      <h3 className={`font-bold text-sm truncate ${titleColor}`}>{teamName}</h3>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-tighter">Team {index + 1}</span>
                     </div>
 
                     <div className="p-3 overflow-y-auto flex-1 custom-scrollbar">
